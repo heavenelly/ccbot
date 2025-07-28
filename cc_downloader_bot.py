@@ -151,10 +151,9 @@ async def command_listener(bot_client):
 # ─── Entrypoint ───
 async def run_kaith_dual():
     user_client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
-    bot_client = TelegramClient("bot.session", API_ID, API_HASH).start(bot_token=TELEGRAM_TOKEN)
-
     await user_client.connect()
-    await bot_client.connect()
+
+    bot_client = await TelegramClient("bot.session", API_ID, API_HASH).start(bot_token=TELEGRAM_TOKEN)
     print("🚀 Kaith dual-client ready")
 
     # Scan past messages first
