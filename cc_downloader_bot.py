@@ -5,6 +5,7 @@ from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 from dotenv import load_dotenv
 from quart import Quart
+from asyncio import Queue
 
 # ─── Load secrets safely ───
 load_dotenv()
@@ -55,15 +56,24 @@ async def kaith_healthcheck():
 async def typo_healthcheck():
     return {"status": "ok"}
 
-# ─── Telegram Notification ───
+# ─── Async Notification Queue ───
+notification_queue = Queue()
+
 async def send_notification(text: str):
-    try:
-        bot = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
-        await bot.connect()
-        await bot.send_message(NOTIFY_USER_ID, f"@youngbusiness_woman {text}")
-        print(f"✅ Notification sent: {text}")
-    except Exception as e:
-        print(f"❌ Notification error: {e}")
+    await notification_queue.put(text)
+
+async def notification_worker():
+    bot = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
+    await bot.connect()
+    print("📡 Notification worker running...")
+    while True:
+        text = await notification_queue.get()
+        try:
+            await bot.send_message(NOTIFY_USER_ID, f"@youngbusiness_woman {text}")
+            print(f"✅ Sent: {text}")
+            await asyncio.sleep(1.5)  # throttle delay
+        except Exception as e:
+            print(f"❌ Notification error: {text} — {e}")
 
 # ─── Daily Summary ───
 async def daily_summary():
@@ -152,6 +162,6 @@ __all__ = [
     "command_listener",
     "download_if_valid",
     "app",
-    "daily_summary"
+    "daily_summary",
+    "notification_worker"
 ]
-
