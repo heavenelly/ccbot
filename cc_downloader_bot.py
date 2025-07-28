@@ -126,13 +126,14 @@ async def command_listener(bot_client):
         except Exception as e:
             print(f"⚠️ Command response error: {e}")
 
-    @bot_client.on(events.NewMessage(pattern="/ping"))
-    async def ping_handler(event):
-        try:
-            await bot_client.send_message(event.chat_id, "🟢 Kaith is online and operational!")
-        except Exception as e:
-            print(f"⚠️ Ping command error: {e}")
-
+   @bot_client.on(events.NewMessage(pattern="/ping"))
+async def ping_handler(event):
+    try:
+        mood = random.choice(MOODS)
+        message = f"🟢 Kaith is online and operational!\n{mood.capitalize()}."
+        await bot_client.send_message(event.chat_id, message)
+    except Exception as e:
+        print(f"⚠️ Ping command error: {e}")
 
 # ─── Entrypoint ───
 async def run_kaith_dual():
