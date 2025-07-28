@@ -1,3 +1,4 @@
+import os
 import asyncio
 from telethon import TelegramClient
 from telethon.sessions import StringSession
@@ -7,28 +8,23 @@ from cc_downloader_bot import (
 )
 
 async def main():
-    # Initialize Telegram client with session
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
-
     try:
         await client.connect()
         print("✅ Telegram client connected")
 
-        # Start Telegram command listener
+        # Start Telegram-related tasks
         await command_listener(client)
-
-        # Create tasks for bot and daily summary
         asyncio.create_task(daily_summary())
-        import os
-PORT = int(os.getenv("PORT", "8000"))
-asyncio.create_task(app.run_task(host="0.0.0.0", port=PORT))
 
+        # Start Quart app on dynamic port
+        PORT = int(os.getenv("PORT", "8000"))
+        asyncio.create_task(app.run_task(host="0.0.0.0", port=PORT))
 
-        # Keep bot alive
+        # Keep bot running
         await client.run_until_disconnected()
-
     except Exception as e:
-        print(f"💥 Bot startup failed: {e}")
+        print(f"🔥 Bot startup failed: {e}")
         raise
 
 if __name__ == "__main__":
