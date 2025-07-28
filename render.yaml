@@ -7,16 +7,3 @@ services:
     buildCommand: "pip install --no-cache-dir -r requirements.txt"
     startCommand: "python cc_downloader_bot.py"
     autoDeploy: true
-    envVars:
-      - key: API_ID
-        value: YOUR_TELEGRAM_API_ID
-      - key: API_HASH
-        value: YOUR_TELEGRAM_API_HASH
-      - key: SESSION_STRING
-        value: YOUR_TELETHON_SESSION
-      - key: TELEGRAM_TOKEN
-        value: YOUR_BOT_TOKEN
-      - key: NOTIFY_USER_ID
-        value: YOUR_TELEGRAM_USER_ID
-      - key: PORT
-        value: "8000"
