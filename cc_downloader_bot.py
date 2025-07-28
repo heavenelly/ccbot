@@ -79,7 +79,7 @@ async def command_listener(client):
             message = "📊 No CC downloaded yet today."
         await client.send_message(event.chat_id, f"@youngbusiness_woman {message}")
 
-# ─── Folder Detection ───
+# ─── Category Detection ───
 def detect_category(text, filename):
     combined = f"{text} {filename}".lower()
     for folder, keywords in CATEGORY_MAP.items():
@@ -120,24 +120,16 @@ async def download_if_valid(msg, source: str):
     except Exception as e:
         await send_notification(f"⚠️ {source} download failed: {filename} — {e}")
 
-# ─── MAIN SCRIPT ───
-async def main():
-    client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
-    await client.start()
-    await command_listener(client)
-
-    # Start background services
-    asyncio.create_task(app.run_task(host="0.0.0.0", port=3000))
-    asyncio.create_task(daily_summary())
-
-    # Monitor channel messages
-    @client.on(events.NewMessage(chats=CHANNEL_LINK))
-    async def handler(event):
-        if event.document:
-            await download_if_valid(event.message, "Telegram")
-
-    print("🚀 Bot is running.")
-    await client.run_until_disconnected()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# ─── EXPORTS ───
+__all__ = [
+    "TelegramClient",
+    "StringSession",
+    "SESSION_STRING",
+    "API_ID",
+    "API_HASH",
+    "CHANNEL_LINK",
+    "command_listener",
+    "download_if_valid",
+    "app",
+    "daily_summary"
+]
