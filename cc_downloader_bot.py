@@ -97,5 +97,6 @@ async def download_if_valid(msg, source: str):
     print(f"🗂 Filename: {filename}")
 
     if not any(c in combined for c in APPROVED_CREATORS):
-        await send_notification(f"⛔️ Skipped — no
+       await send_notification(f"⛔️ Skipped — no approved creator found in: {filename}")
+
 
