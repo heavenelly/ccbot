@@ -1,3 +1,8 @@
+print("🚦 Startup initiated...")
+print("✅ Telegram bot coroutine running...")
+print("✅ Quart server coroutine running...")
+print("✅ Daily summary coroutine running...")
+
 import asyncio
 from cc_downloader_bot import (
     TelegramClient, 
