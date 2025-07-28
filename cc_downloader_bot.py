@@ -47,6 +47,11 @@ app = Quart(__name__)
 async def ping():
     return "OK 👋"
 
+@app.route("/kaithhealthcheck")
+async def kaith_healthcheck():
+    return {"status": "ok"}
+
+
 # ─── Telegram Notification ───
 async def send_notification(text: str):
     try:
