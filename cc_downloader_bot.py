@@ -98,5 +98,24 @@ async def download_if_valid(msg, source: str):
 
     if not any(c in combined for c in APPROVED_CREATORS):
        await send_notification(f"⛔️ Skipped — no approved creator found in: {filename}")
+    if not filename or not filename.lower().endswith(VALID_EXTENSIONS):
+        await send_notification(f"📭 Skipped unsupported file type: {filename}")
+        return
 
+    category = detect_category(text, filename)
+    folder = os.path.join("downloads", category)
+    os.makedirs(folder, exist_ok=True)
+    path = os.path.join(folder, filename)
+
+    if os.path.exists(path):
+        await send_notification(f"🔁 Skipped duplicate: {filename}")
+        return
+
+    print(f"📥 Downloading ({source}) to /{category}: {filename}")
+    try:
+        await msg.download_media(file=path)
+        await send_notification(f"✅ {source} CC saved in /{category}: {filename}")
+        download_log.append(filename)
+    except Exception as e:
+        await send_notification(f"⚠️ {source} download failed: {filename} — {e}")
 
