@@ -12,6 +12,8 @@ async def main():
     try:
         await client.connect()
         print("✅ Telegram client connected")
+        print("🐣 Main.py version loaded successfully — July 28 midnight build")
+
 
         # Start Telegram-related tasks
         await command_listener(client)
