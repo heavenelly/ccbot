@@ -165,3 +165,11 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+# ─── Main Entrypoint ───
+if __name__ == "__main__":
+    import asyncio
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(app.run_task())           # Quart Ping Server
+    loop.create_task(daily_summary())          # Midnight Summary
+    loop.run_until_complete(telegram_bot())    # Telegram Listener
