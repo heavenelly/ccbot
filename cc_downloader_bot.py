@@ -146,3 +146,4 @@ __all__ = [
     "app",
     "daily_summary"
 ]
+
