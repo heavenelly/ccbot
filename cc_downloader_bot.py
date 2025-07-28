@@ -1,53 +1,45 @@
-import os
-import asyncio
+import os, asyncio
 from datetime import datetime
+from dotenv import load_dotenv
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
-from dotenv import load_dotenv
+from telethon.tl.types import PeerChannel
 from quart import Quart
 from asyncio import Queue
 
 # ─── Load Environment Variables ───
 load_dotenv()
-try:
-    API_ID = int(os.getenv("API_ID", "0"))
-    API_HASH = os.getenv("API_HASH", "")
-    SESSION_STRING = os.getenv("SESSION_STRING", "")
-    TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
-    NOTIFY_USER_ID = int(os.getenv("NOTIFY_USER_ID", "0"))
-    if not all([API_ID, API_HASH, SESSION_STRING, TELEGRAM_TOKEN]):
-        raise ValueError("❌ Missing required env vars")
-except Exception as e:
-    print(f"🚨 Env setup failed: {e}")
-    raise SystemExit(1)
+API_ID = int(os.getenv("API_ID", "0"))
+API_HASH = os.getenv("API_HASH", "")
+SESSION_STRING = os.getenv("SESSION_STRING", "")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
+NOTIFY_USER_ID = int(os.getenv("NOTIFY_USER_ID", "0"))
 
 # ─── Constants ───
 CHANNEL_LINK = -1001181373341
 VALID_EXTENSIONS = (".package", ".zip", ".rar")
-APPROVED_CREATORS = [ "okruee", "simstrouble", "ellcrze", "oni", "sinsimcc", "jellypaws", "caio", "serenity", "joliebean", "plushpixels", "peachyfaerie", "lamatisse", "myshunosun", "syboulette", "pixelvibes", "pimpmysims4", "simspirationbuilds", "thecluttercat", "foreverdesigns", "nostylexwoodland", "bostyny", "heybrine", "arethabee", "leosims" ]
+APPROVED_CREATORS = [ "okruee", "serenity", "joliebean", "myshunosun", "syboulette", "leosims", "ellcrze", "oni", "caio", "sinsimcc", "jellypaws", "simstrouble", "plushpixels", "peachyfaerie", "lamatisse", "pixelvibes", "pimpmysims4", "simspirationbuilds", "thecluttercat", "foreverdesigns", "nostylexwoodland", "bostyny", "heybrine", "arethabee" ]
 CATEGORY_MAP = {
     "build": ["build", "walls", "floors", "windows", "doors"],
     "buy": ["buy", "objects", "clutter", "furniture", "decor"],
     "cc": ["cas", "hair", "outfit", "skin", "eyes", "clothing", "makeup"],
     "gameplay_mods": ["mod", "script", "gameplay", "mechanic"]
 }
+
+# ─── Globals ───
 download_log = []
 notification_queue = Queue()
-
-# ─── Quart API ───
 app = Quart(__name__)
 
+# ─── Quart Routes ───
 @app.route("/")
-async def ping():
-    return "OK 👋"
+async def ping(): return "OK 👋"
 
 @app.route("/kaithhealthcheck")
-async def kaith_healthcheck():
-    return {"status": "ok"}
+async def health(): return {"status": "ok"}
 
 @app.route("/kaithheathcheck")
-async def typo_healthcheck():
-    return {"status": "ok"}
+async def typo(): return {"status": "ok"}
 
 # ─── Notification System ───
 async def send_notification(text: str):
@@ -63,7 +55,7 @@ async def notification_worker(user_client):
         except Exception as e:
             print(f"❌ Notification error: {text} — {e}")
 
-# ─── File Processing ───
+# ─── File Handling ───
 def detect_category(text, filename):
     combined = f"{text} {filename}".lower()
     for folder, keywords in CATEGORY_MAP.items():
@@ -81,20 +73,34 @@ async def download_if_valid(msg, source: str):
         if not filename or not filename.lower().endswith(VALID_EXTENSIONS):
             await send_notification(f"📭 Skipped unsupported file type: {filename}")
             return
+
         category = detect_category(text, filename)
         folder = os.path.join("downloads", category)
         os.makedirs(folder, exist_ok=True)
         path = os.path.join(folder, filename)
+
         if os.path.exists(path):
             await send_notification(f"🔁 Skipped duplicate: {filename}")
             return
+
         await msg.download_media(file=path)
         await send_notification(f"✅ {source} CC saved in /{category}: {filename}")
         download_log.append(filename)
     except Exception as e:
         await send_notification(f"⚠️ {source} download failed: {filename} — {e}")
 
-# ─── Summary & Commands ───
+# ─── Backfill Old Messages ───
+async def scan_channel_history(user_client, limit=5000):
+    try:
+        channel = await user_client.get_entity(PeerChannel(CHANNEL_LINK))
+        async for msg in user_client.iter_messages(channel, reverse=True, limit=limit):
+            await download_if_valid(msg, "channel-history")
+            await asyncio.sleep(0.5)
+        await send_notification("🗂 Finished scanning channel history")
+    except Exception as e:
+        await send_notification(f"❌ History scan failed: {e}")
+
+# ─── Summary & Command ───
 async def daily_summary():
     while True:
         now = datetime.now()
@@ -129,14 +135,23 @@ async def run_kaith_dual():
     await bot_client.connect()
     print("🚀 Kaith dual-client ready")
 
+    # Scan past messages first
+    await scan_channel_history(user_client)
+
+    # Listen for new messages
     @user_client.on(events.NewMessage(chats=CHANNEL_LINK))
     async def channel_listener(event):
         await download_if_valid(event.message, "channel")
 
     await command_listener(bot_client)
+
+    # Start background tasks
     asyncio.create_task(notification_worker(user_client))
     asyncio.create_task(daily_summary())
-    asyncio.create_task(app.run_task(host="0.0.0.0", port=8080))
+
+    # Start the web server
+    PORT = int(os.getenv("PORT", "8000"))
+    asyncio.create_task(app.run_task(host="0.0.0.0", port=PORT))
 
     await asyncio.gather(user_client.run_until_disconnected(), bot_client.run_until_disconnected())
 
