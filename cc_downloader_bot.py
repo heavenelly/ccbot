@@ -165,3 +165,24 @@ __all__ = [
     "daily_summary",
     "notification_worker"
 ]
+# ─── Startup Entrypoint ───
+async def async_trigger_handler():
+    try:
+        client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
+        await client.connect()
+        print("✅ Telegram client connected")
+
+        await command_listener(client)
+        asyncio.create_task(daily_summary())
+        asyncio.create_task(notification_worker())
+        asyncio.create_task(app.run_task(host="0.0.0.0", port=8080))
+
+        await client.run_until_disconnected()
+
+    except Exception as e:
+        print(f"💥 Bot startup failed: {e}")
+        return {"status": "crashed", "error": str(e)}
+
+if __name__ == "__main__":
+    asyncio.run(async_trigger_handler())
+
