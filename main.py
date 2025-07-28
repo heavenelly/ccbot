@@ -19,7 +19,10 @@ async def main():
 
         # Create tasks for bot and daily summary
         asyncio.create_task(daily_summary())
-        asyncio.create_task(app.run_task(host="0.0.0.0", port=8000))
+        import os
+PORT = int(os.getenv("PORT", "8000"))
+asyncio.create_task(app.run_task(host="0.0.0.0", port=PORT))
+
 
         # Keep bot alive
         await client.run_until_disconnected()
