@@ -116,6 +116,13 @@ async def daily_summary():
 async def command_listener(bot_client):
     @bot_client.on(events.NewMessage(pattern="/summary"))
     async def summary_handler(event):
+            @bot_client.on(events.NewMessage(pattern="/ping"))
+    async def ping_handler(event):
+        try:
+            await bot_client.send_message(event.chat_id, "🟢 Kaith is online and operational!")
+        except Exception as e:
+            print(f"⚠️ Ping command error: {e}")
+
         try:
             if download_log:
                 summary = "\n".join(f"— {f} ✅" for f in download_log)
