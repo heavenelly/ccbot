@@ -134,13 +134,6 @@ async def command_listener(bot_client):
             print(f"⚠️ Ping command error: {e}")
 
 
-    @bot_client.on(events.NewMessage(pattern="/ping"))
-    async def ping_handler(event):
-        try:
-            await bot_client.send_message(event.chat_id, "🟢 Kaith is online and operational!")
-        except Exception as e:
-            print(f"⚠️ Ping command error: {e}")
-
 # ─── Entrypoint ───
 async def run_kaith_dual():
     user_client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
