@@ -9,11 +9,11 @@ from quart import Quart
 # ─── Load secrets ───
 load_dotenv()
 API_ID = int(os.getenv("API_ID"))
-API_HASH = os.getenv("API_HASH")  # ✅ fixed unmatched parenthesis
+API_HASH = os.getenv("API_HASH")
 SESSION_STRING = os.getenv("SESSION_STRING")
 NOTIFY_BOT_TOKEN = os.getenv("NOTIFY_BOT_TOKEN")
 NOTIFY_USER_ID = int(os.getenv("NOTIFY_USER_ID"))
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")  # ✅ used for login
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 
 CHANNEL_LINK = -1001181373341
 
@@ -54,7 +54,7 @@ async def send_notification(text: str):
     except Exception as e:
         print(f"❌ Notification failed: {e}")
 
-# ─── Daily Summary at Midnight ───
+# ─── Daily Summary ───
 async def daily_summary():
     while True:
         now = datetime.now()
@@ -97,7 +97,8 @@ async def download_if_valid(msg, source: str):
     print(f"🗂 Filename: {filename}")
 
     if not any(c in combined for c in APPROVED_CREATORS):
-       await send_notification(f"⛔️ Skipped — no approved creator found in: {filename}")
+        await send_notification(f"⛔️ Skipped — no approved creator found in: {filename}")
+        return
     if not filename or not filename.lower().endswith(VALID_EXTENSIONS):
         await send_notification(f"📭 Skipped unsupported file type: {filename}")
         return
@@ -119,3 +120,24 @@ async def download_if_valid(msg, source: str):
     except Exception as e:
         await send_notification(f"⚠️ {source} download failed: {filename} — {e}")
 
+# ─── MAIN SCRIPT ───
+async def main():
+    client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
+    await client.start()
+    await command_listener(client)
+
+    # Start background services
+    asyncio.create_task(app.run_task(host="0.0.0.0", port=3000))
+    asyncio.create_task(daily_summary())
+
+    # Monitor channel messages
+    @client.on(events.NewMessage(chats=CHANNEL_LINK))
+    async def handler(event):
+        if event.document:
+            await download_if_valid(event.message, "Telegram")
+
+    print("🚀 Bot is running.")
+    await client.run_until_disconnected()
+
+if __name__ == "__main__":
+    asyncio.run(main())
