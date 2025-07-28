@@ -51,6 +51,9 @@ async def ping():
 async def kaith_healthcheck():
     return {"status": "ok"}
 
+@app.route("/kaithheathcheck")
+async def typo_healthcheck():
+    return {"status": "ok"}
 
 # ─── Telegram Notification ───
 async def send_notification(text: str):
