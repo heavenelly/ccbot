@@ -12,9 +12,7 @@ try:
     API_ID = int(os.getenv("API_ID", "0"))
     API_HASH = os.getenv("API_HASH", "")
     SESSION_STRING = os.getenv("SESSION_STRING", "")
-    NOTIFY_BOT_TOKEN = os.getenv("NOTIFY_BOT_TOKEN", "")
     NOTIFY_USER_ID = int(os.getenv("NOTIFY_USER_ID", "0"))
-    TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "")
     if not all([API_ID, API_HASH, SESSION_STRING]):
         raise ValueError("❌ Missing required env vars: API_ID, API_HASH, or SESSION_STRING")
 except Exception as e:
@@ -52,10 +50,10 @@ async def ping():
 # ─── Telegram Notification ───
 async def send_notification(text: str):
     try:
-        async with TelegramClient("notify_bot", API_ID, API_HASH) as bot:
-            await bot.start(bot_token=NOTIFY_BOT_TOKEN)
-            await bot.send_message(NOTIFY_USER_ID, f"@youngbusiness_woman {text}")
-            print(f"✅ Notification sent: {text}")
+        bot = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
+        await bot.connect()
+        await bot.send_message(NOTIFY_USER_ID, f"@youngbusiness_woman {text}")
+        print(f"✅ Notification sent: {text}")
     except Exception as e:
         print(f"❌ Notification error: {e}")
 
