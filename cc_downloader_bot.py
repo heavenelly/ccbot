@@ -1,4 +1,4 @@
-import os, asyncio
+import os, asyncio, random
 from datetime import datetime
 from dotenv import load_dotenv
 from telethon import TelegramClient, events
@@ -18,13 +18,26 @@ NOTIFY_USER_ID = int(os.getenv("NOTIFY_USER_ID", "0"))
 # ─── Constants ───
 CHANNEL_LINK = -1001181373341
 VALID_EXTENSIONS = (".package", ".zip", ".rar")
-APPROVED_CREATORS = [ "okruee", "serenity", "joliebean", "myshunosun", "syboulette", "leosims", "ellcrze", "oni", "caio", "sinsimcc", "jellypaws", "simstrouble", "plushpixels", "peachyfaerie", "lamatisse", "pixelvibes", "pimpmysims4", "simspirationbuilds", "thecluttercat", "foreverdesigns", "nostylexwoodland", "bostyny", "heybrine", "arethabee" ]
+APPROVED_CREATORS = [
+    "okruee", "serenity", "joliebean", "myshunosun", "syboulette", "leosims",
+    "ellcrze", "oni", "caio", "sinsimcc", "jellypaws", "simstrouble", "plushpixels",
+    "peachyfaerie", "lamatisse", "pixelvibes", "pimpmysims4", "simspirationbuilds",
+    "thecluttercat", "foreverdesigns", "nostylexwoodland", "bostyny", "heybrine", "arethabee"
+]
 CATEGORY_MAP = {
     "build": ["build", "walls", "floors", "windows", "doors"],
     "buy": ["buy", "objects", "clutter", "furniture", "decor"],
     "cc": ["cas", "hair", "outfit", "skin", "eyes", "clothing", "makeup"],
     "gameplay_mods": ["mod", "script", "gameplay", "mechanic"]
 }
+
+MOODS = [
+    "✨ feeling clutter-compatible",
+    "🌸 manifesting build mode beauty",
+    "📦 organizing aesthetic downloads",
+    "🧃 hydrated and ready to fetch CC",
+    "🎀 vibing with creators today"
+]
 
 # ─── Globals ───
 download_log = []
@@ -100,7 +113,7 @@ async def scan_channel_history(user_client, limit=5000):
     except Exception as e:
         await send_notification(f"❌ History scan failed: {e}")
 
-# ─── Summary & Command ───
+# ─── Summary & Command Handlers ───
 async def daily_summary():
     while True:
         now = datetime.now()
@@ -126,14 +139,14 @@ async def command_listener(bot_client):
         except Exception as e:
             print(f"⚠️ Command response error: {e}")
 
-   @bot_client.on(events.NewMessage(pattern="/ping"))
-async def ping_handler(event):
-    try:
-        mood = random.choice(MOODS)
-        message = f"🟢 Kaith is online and operational!\n{mood.capitalize()}."
-        await bot_client.send_message(event.chat_id, message)
-    except Exception as e:
-        print(f"⚠️ Ping command error: {e}")
+    @bot_client.on(events.NewMessage(pattern="/ping"))
+    async def ping_handler(event):
+        try:
+            mood = random.choice(MOODS)
+            message = f"🟢 Kaith is online and operational!\n{mood.capitalize()}."
+            await bot_client.send_message(event.chat_id, message)
+        except Exception as e:
+            print(f"⚠️ Ping command error: {e}")
 
 # ─── Entrypoint ───
 async def run_kaith_dual():
@@ -147,7 +160,7 @@ async def run_kaith_dual():
     # Scan past messages first
     await scan_channel_history(user_client)
 
-    # Listen for new messages
+    # Listen for new channel messages
     @user_client.on(events.NewMessage(chats=CHANNEL_LINK))
     async def channel_listener(event):
         await download_if_valid(event.message, "channel")
@@ -158,11 +171,14 @@ async def run_kaith_dual():
     asyncio.create_task(notification_worker(user_client))
     asyncio.create_task(daily_summary())
 
-    # Start the web server
+    # Start web server
     PORT = int(os.getenv("PORT", "8000"))
     asyncio.create_task(app.run_task(host="0.0.0.0", port=PORT))
 
-    await asyncio.gather(user_client.run_until_disconnected(), bot_client.run_until_disconnected())
+    await asyncio.gather(
+        user_client.run_until_disconnected(),
+        bot_client.run_until_disconnected()
+    )
 
 if __name__ == "__main__":
     asyncio.run(run_kaith_dual())
