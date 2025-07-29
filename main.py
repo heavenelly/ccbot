@@ -1,3 +1,4 @@
+print(f"🌍 Running Quart on port: {get_port()}")
 import os
 import asyncio
 from telethon import TelegramClient
@@ -9,8 +10,7 @@ from cc_downloader_bot import (
 
 # ─── Port Fetcher ───
 def get_port():
-    raw_port = os.getenv("PORT", "8000").strip()
-    return int(raw_port) if raw_port.isdigit() else 8000
+    return int(os.environ["PORT"])
 
 async def main():
     print("🌐 Quart web server launching on dynamic port")
