@@ -15,15 +15,14 @@ MOODS = ["purring", "sleepy", "curious", "ready to fetch files"]
 
 # ─── Notification Fix ───
 async def send_notification(text):
-    if NOTIFY_USER_ID and NOTIFY_USER_ID > 0:
-        try:
-            user_client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
-            await user_client.connect()
-            entity = await user_client.get_input_entity(NOTIFY_USER_ID)
-            await user_client.send_message(entity, f"@youngbusiness_woman {text}")
-            await user_client.disconnect()
-        except Exception as e:
-            print(f"⚠️ Notification failed for {NOTIFY_USER_ID}: {e}")
+    try:
+        user_client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
+        await user_client.connect()
+        await user_client.send_message("me", f"📥 Kaith Update:\n{text}")
+        await user_client.disconnect()
+    except Exception as e:
+        print(f"⚠️ Notification failed: {e}")
+
     else:
         print("⚠️ Skipping notification — invalid NOTIFY_USER_ID")
 
