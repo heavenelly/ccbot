@@ -1,23 +1,27 @@
-import os, asyncio, random
+import os
+import re
+import asyncio
+import random
 from datetime import datetime
+from fastapi import FastAPI
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
-from telethon.errors import UsernameNotOccupiedError
-from quart import Quart
-from config import (
-    SESSION_STRING, API_ID, API_HASH, TELEGRAM_TOKEN,
-    NOTIFY_USER_ID, CHANNEL_LINK
-)
 
-app = Quart(__name__)
+# ─── Constants & Globals ───
+API_ID = os.environ["API_ID"]
+API_HASH = os.environ["API_HASH"]
+SESSION_STRING = os.environ["SESSION_STRING"]
+TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
+CHANNEL_LINK = os.environ["CHANNEL_LINK"]
+
 download_log = []
 MOODS = ["purring", "sleepy", "curious", "ready to fetch files"]
+app = FastAPI()
 
-# ─── Notification Fix ───
+# ─── Self-Notify ───
 async def send_notification(text):
     user_client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
     await user_client.connect()
-
     try:
         await user_client.send_message("me", f"📥 Kaith Update:\n{text}")
         print("✅ Notification sent")
@@ -66,8 +70,7 @@ async def daily_summary():
 async def run_kaith_dual():
     print(f"🌍 Final port bind: {int(os.environ['PORT'])}")
 
-    user_client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
-    await user_client.connect()
+    user_client = await TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH).start()
     bot_client = await TelegramClient("bot.session", API_ID, API_HASH).start(bot_token=TELEGRAM_TOKEN)
     print("🚀 Kaith dual-client ready")
 
@@ -76,11 +79,23 @@ async def run_kaith_dual():
 
     @user_client.on(events.NewMessage(chats=CHANNEL_LINK))
     async def channel_listener(event):
-        # Replace with your download logic
-        download_log.append(f"Downloaded file: {event.message.message}")
+        file_name = event.message.message
+        if re.search(r'\.(zip|rar|pdf|docx|txt)$', file_name, re.IGNORECASE):
+            timestamp = datetime.now().strftime('%Y-%m-%d %H:%M')
+            formatted = f"[{timestamp}] {file_name}"
+            download_log.append(formatted)
+            print(f"📥 Logged from channel: {formatted}")
+            await send_notification(f"📥 New CC drop:\n{file_name}")
+        else:
+            print(f"⚠️ Ignored non-CC message: {file_name}")
+
+    @app.get("/health")
+    async def health():
+        return {"status": "Kaith is alive 💚"}
 
     await app.run_task(host="0.0.0.0", port=int(os.environ["PORT"]))
 
+# ─── Main Runner ───
 if __name__ == "__main__":
     try:
         asyncio.run(run_kaith_dual())
