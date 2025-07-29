@@ -7,27 +7,31 @@ from cc_downloader_bot import (
     command_listener, daily_summary, app
 )
 
+# ─── Optional: Sanitize and debug PORT ───
+def get_port():
+    raw_port = os.getenv("PORT", "8000").strip()
+    return int(raw_port) if raw_port.isdigit() else 8000
+
 async def main():
+    # Start Quart server FIRST so Render sees an open port
+    port_task = asyncio.create_task(app.run_task(host="0.0.0.0", port=get_port()))
+    print("🌐 Quart web server started on dynamic port")
+
+    # Initialize Telegram client
     client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
-    try:
-        await client.connect()
-        print("✅ Telegram client connected")
-        print("🐣 Main.py version loaded successfully — July 28 midnight build")
+    await client.connect()
+    print("✅ Telegram client connected")
+    print("🐣 Main.py version loaded successfully — July 28 midnight build")
 
+    # Start bot command listener and daily summary worker
+    await command_listener(client)
+    asyncio.create_task(daily_summary())
 
-        # Start Telegram-related tasks
-        await command_listener(client)
-        asyncio.create_task(daily_summary())
-
-        # Start Quart app on dynamic port
-        PORT = int(os.getenv("PORT", "8000"))
-        asyncio.create_task(app.run_task(host="0.0.0.0", port=PORT))
-
-        # Keep bot running
-        await client.run_until_disconnected()
-    except Exception as e:
-        print(f"🔥 Bot startup failed: {e}")
-        raise
+    # Run everything concurrently
+    await asyncio.gather(
+        client.run_until_disconnected(),
+        port_task
+    )
 
 if __name__ == "__main__":
     try:
