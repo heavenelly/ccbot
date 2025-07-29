@@ -15,16 +15,16 @@ MOODS = ["purring", "sleepy", "curious", "ready to fetch files"]
 
 # ─── Notification Fix ───
 async def send_notification(text):
+    user_client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
+    await user_client.connect()
+
     try:
-        user_client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
-        await user_client.connect()
         await user_client.send_message("me", f"📥 Kaith Update:\n{text}")
-        await user_client.disconnect()
+        print("✅ Notification sent")
     except Exception as e:
         print(f"⚠️ Notification failed: {e}")
-
-    else:
-        print("⚠️ Skipping notification — invalid NOTIFY_USER_ID")
+    finally:
+        await user_client.disconnect()
 
 # ─── Command Handlers ───
 async def command_listener(bot_client):
