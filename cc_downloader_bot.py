@@ -93,8 +93,6 @@ async def run_kaith_dual():
     async def health():
         return {"status": "Kaith is alive 💚"}
 
-    await app.run_task(host="0.0.0.0", port=int(os.environ["PORT"]))
-
 # ─── Main Runner ───
 if __name__ == "__main__":
     try:
